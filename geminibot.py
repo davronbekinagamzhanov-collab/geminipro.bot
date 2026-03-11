@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 
 # --- НАСТРОЙКИ БОТА ---
-TOKEN = '8748113253:AAHsF8O48vByA_2Xuw0Dt5cTtFxL-0D5inM'
+TOKEN = '8748113253:AAHp05rxnNdHGVFAvCcTU0hc7Yks0UUzSPk'
 ADMIN_ID = 6305773261  # Твой личный ID
 
 # СЮДА ВСТАВЬ СВОИ ДВЕ ССЫЛКИ ОТ BOOSTY:
@@ -264,4 +264,5 @@ print("Бот успешно запущен! Ожидание сообщений
 try:
     bot.infinity_polling(timeout=90, long_polling_timeout=50)
 except Exception as e:
+
     print(f"Ошибка интернета: {e}")
